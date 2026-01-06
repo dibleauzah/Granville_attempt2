@@ -1,0 +1,688 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 ArialMT;\f1\fswiss\fcharset0 Arial-BoldMT;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww23460\viewh14500\viewkind0
+\deftab720
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardeftab720\pardirnatural\partightenfactor0
+
+\f0\fs36 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardeftab720\pardirnatural\qc\partightenfactor0
+
+\f1\b \cf0 \ul \ulc0 Granville 5.1 Solution Code:
+\f0\b0 \ulnone \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardeftab720\pardirnatural\partightenfactor0
+\cf0 import pandas as pd\
+import numpy as np\
+import scipy\
+from scipy.stats import ks_2samp\
+from statsmodels.distributions.empirical_distribution import ECDF\
+dataset = \'92insurance_compare.csv\'92\
+url = "https://raw.githubusercontent.com/VincentGranville/Main/main/" + dataset\
+df = pd.read_csv(url)\
+# df = pd.read_csv(dataset)\
+if dataset == \'92insurance_compare.csv\'92:\
+df = df.drop(\'92region\'92, axis=1)\
+df = df.dropna(axis=\'92columns\'92)\
+print(df.head())\
+data_real = df.loc[df[\'92Data\'92] == \'92Real\'92]\
+data_real = data_real.drop(\'92Data\'92, axis=1)\
+data_real = data_real.to_numpy()\
+print(data_real)\
+r_corr = np.corrcoef(data_real.T) # need to transpose the data to make sense\
+print(r_corr)\
+ltests = df.Data.unique().tolist()\
+popped_item = ltests.pop(0) # remove real data from the tests\
+print(ltests)\
+#--- main loop\
+for test in ltests:\
+data_test = df.loc[df[\'92Data\'92] == test]\
+data_test = data_test.drop(\'92Data\'92, axis=1)\
+data_test = data_test.to_numpy()\
+t_corr = np.corrcoef(data_test.T)\
+delta = np.abs(t_corr - r_corr)\
+dim = delta.shape[0] # number of features\
+ks = np.zeros(dim)\
+out_of_range = 0 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf0 for idx in range(dim):\
+dr = data_real[:,idx]\
+dt = data_test[:,idx]\
+stats = ks_2samp(dr, dt)\
+ks[idx] = stats.statistic\
+if np.min(dt) < np.min(dr) or np.max(dt) > np.max(dr):\
+out_of_range = 1\
+str = "%20s %14s %8.6f %8.6f %8.6f %8.6f %1d" % (dataset, test, np.mean(delta),\
+np.max(delta), np.mean(ks), np.max(ks), out_of_range)\
+print(str)\
+#--- visualizing results\
+def vg_scatter(df, test, counter):\
+# customized plots, insurance data\
+# one of 6 plots, subplot position based on counter\
+data_plot = df.loc[df[\'92Data\'92] == test]\
+x = data_plot[[\'92age\'92]].to_numpy()\
+y = data_plot[[\'92charges\'92]].to_numpy()\
+plt.subplot(2, 3, counter)\
+plt.scatter(x, y, s = 0.1, c ="blue")\
+plt.xlabel(test, fontsize = 7)\
+plt.xticks([])\
+plt.yticks([])\
+plt.ylim(0,70000)\
+plt.xlim(18,64)\
+return() \
+\
+def vg_histo(df, test, counter):\
+# customized plots, insurance data\
+# one of 6 plots, subplot position based on counter\
+data_plot = df.loc[df[\'92Data\'92] == test]\
+y = data_plot[[\'92charges\'92]].to_numpy()\
+plt.subplot(2, 3, counter)\
+binBoundaries = np.linspace(0, 70000, 30)\
+plt.hist(y, bins=binBoundaries, color=\'92white\'92, align=\'92mid\'92,edgecolor=\'92red\'92\
+linewidth = 0.3)\
+plt.xlabel(test, fontsize = 7)\
+plt.xticks([])\
+plt.yticks([])\
+plt.xlim(0,70000)\
+plt.ylim(0, 250)\
+return()\
+,\
+import matplotlib.pyplot as plt\
+import matplotlib as mpl\
+mpl.rcParams[\'92axes.linewidth\'92] = 0.3\
+vg_scatter(df, \'92Real\'92, 1)\
+vg_scatter(df, \'92YData1\'92, 2)\
+vg_scatter(df, \'92Gretel\'92, 3)\
+vg_scatter(df, \'92Mostly.ai\'92, 4)\
+vg_scatter(df, \'92Synthesize.io\'92, 5)\
+vg_scatter(df, \'92SDV\'92, 6)\
+plt.show()\
+vg_histo(df, \'92Real\'92, 1)\
+vg_histo(df, \'92YData1\'92, 2)\
+vg_histo(df, \'92Gretel\'92, 3)\
+vg_histo(df, \'92Mostly.ai\'92, 4)\
+vg_histo(df, \'92Synthesize.io\'92, 5) \
+\
+vg_histo(df, \'92SDV\'92, 6)\
+plt.show() \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\qc\partightenfactor0
+\cf0 \
+//===//\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardeftab720\pardirnatural\qc\partightenfactor0
+
+\f1\b \cf0 \ul Granville 2.1 Solution Code:
+\f0\b0 \ulnone \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf0 1 import numpy as np\
+2 import pandas as pd\
+3 import matplotlib.pyplot as plt\
+4 from matplotlib import pyplot\
+5 from statsmodels.distributions.empirical_distribution import ECDF\
+6\
+7 #--- [1] read data and only keep features and observations we want\
+8\
+9 #- [1.1] utility functions\
+10\
+11 def string_to_numbers(string):\
+12\
+13 string = string.replace("["\
+,\
+14 string = string.replace("]"\
+,\
+15 string = string.replace(" "\
+,\
+"")\
+"")\
+"")\
+16 arr = string.split(\'92\
+,\
+\'92)\
+17 arr = [eval(i) for i in arr]\
+18 return(arr)\
+19\
+20 def category_to_integer(category):\
+21 if category == \'92Yes\'92:\
+22 integer = 1\
+23 elif category == \'92No\'92:\
+24 integer = 0\
+25 else:\
+26 integer = 2\
+27 return(integer)\
+28\
+29 #- [1.2] read data \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardeftab720\pardirnatural\partightenfactor0
+\cf0 \
+\
+\
+\
+\
+\
+\
+30\
+31 url = "https://raw.githubusercontent.com/VincentGranville/Main/main/Telecom.csv"\
+32 data = pd.read_csv(url)\
+33 features = [\'92tenure\'92\
+,\
+\'92MonthlyCharges\'92\
+,\
+\'92TotalCharges\'92\
+,\
+\'92Churn\'92]\
+34 data[\'92Churn\'92] = data[\'92Churn\'92].map(category_to_integer)\
+35 data[\'92TotalCharges\'92].replace(\'92 \'92, np.nan, inplace=True)\
+36 data.dropna(subset=[\'92TotalCharges\'92], inplace=True) # remove missing data\
+37 print(data.head())\
+38 print (data.shape)\
+39 print (data.columns)\
+40\
+41 #- [1.3] transforming TotalCharges to TotalChargeResidues, add to dataframe\
+42\
+43 arr1 = data[\'92tenure\'92].to_numpy()\
+44 arr2 = data[\'92TotalCharges\'92].to_numpy()\
+45 arr2 = arr2.astype(float)\
+46 residues = arr2 - arr1 * np.sum(arr2) / np.sum(arr1) # also try arr2/arr1\
+47 data[\'92TotalChargeResidues\'92] = residues\
+48\
+49 #- [1.4] set seed for replicability\
+50\
+51 pd.core.common.random_state(None)\
+52 seed = 105\
+53 np.random.seed(seed)\
+54\
+55 #- [1.5] initialize hyperparameters (bins_per_feature), select features\
+56\
+57 features = [\'92tenure\'92\
+,\
+\'92MonthlyCharges\'92\
+,\
+\'92TotalChargeResidues\'92\
+,\
+\'92Churn\'92]\
+58 bins_per_feature = [50, 40, 40, 4]\
+59\
+60 bins_per_feature = np.array(bins_per_feature).astype(int)\
+61 data = data[features]\
+62 print(data.head())\
+63 print (data.shape)\
+64 print (data.columns)\
+65\
+66 #- [1.6] split real dataset into training and validation sets\
+67\
+68 data_training = data.sample(frac = 0.5)\
+69 data_validation = data.drop(data_training.index)\
+70 data_training.to_csv(\'92telecom_training_vg2.csv\'92)\
+71 data_validation.to_csv(\'92telecom_validation_vg2.csv\'92)\
+72\
+73 nobs = len(data_training)\
+74 n_features = len(features)\
+75 eps = 0.0000000001\
+76\
+77\
+78 #--- [2] create synthetic data\
+79\
+80 #- [2.1] create quantile table pc_table2, one row for each feature\
+81\
+82 pc_table2 = []\
+83 for k in range(n_features):\
+84 label = features[k]\
+85 incr = 1 / bins_per_feature[k]\
+86 pc = np.arange(0, 1 + eps, incr)\
+87 arr = np.quantile(data_training[label], pc, axis=0)\
+88 pc_table2.append(arr)\
+89\
+90 #- [2.2] create/update bin for each obs [layer 1]\
+Faster implementation: replace \'92while\'92 loop by dichotomic search\
+91 # 92\
+93 npdata = pd.DataFrame.to_numpy(data_training[features])\
+94 bin_count = \{\} # number of obs per bin\
+95 bin_obs = \{\} # list of obs in each bin, separated by "\'98", stored as a string\
+\
+\
+\
+\
+\
+96 for obs in npdata:\
+97 key = []\
+98 for k in range(n_features):\
+99 idx = 0\
+100 arr = pc_table2[k] # percentiles for feature k\
+101 while obs[k] >= arr[idx] and idx < bins_per_feature[k]:\
+102 idx = idx + 1\
+103 idx = idx - 1 # lower bound for feature k in bin[key] attached to obs\
+104 key.append(idx)\
+105 skey = str(key)\
+106 if skey in bin_count:\
+107 bin_count[skey] += 1\
+108 bin_obs[skey] += "\'98" + str(obs)\
+109 else:\
+110 bin_count[skey] = 1\
+111 bin_obs[skey] = str(obs)\
+112\
+113 #- [2.3] generate nobs_synth observations (if mode = FixedCounts, nobs_synth = nobs)\
+114\
+115 def random_bin_counts(n, bin_count):\
+116 # generate multinomial bin counts with same expectation as real counts\
+117 pvals = []\
+118 for skey in bin_count:\
+119 pvals.append(bin_count[skey]/nobs)\
+120 return(np.random.multinomial(n, pvals))\
+121\
+122 def get_obs_in_bin(bin_obs, skey):\
+123 # get list of observations (real data) in bin skey, also return median\
+124 arr_obs = []\
+125 arr_obs_aux = (bin_obs[skey]).split(\'92\'98\'92)\
+126 for obs in arr_obs_aux:\
+127 obs = \'92 \'92.join(obs.split())\
+128 obs = obs.replace("[ "\
+,\
+129 obs = obs.replace("["\
+,\
+130 obs = obs.replace(" ]"\
+,\
+131 obs = obs.replace("]"\
+,\
+"")\
+"")\
+"")\
+"")\
+132 obs = obs.split(\'92 \'92)\
+133 obs = (np.array(obs)).astype(float)\
+134 arr_obs.append(obs)\
+135 arr_obs = np.array(arr_obs)\
+136 median = np.median(arr_obs, axis = 0)\
+137 return(arr_obs, median)\
+138\
+139\
+140 mode = \'92RandomCounts\'92 # (options: \'92FixedCounts\'92 or \'92RandomCounts\'92)\
+141 if mode == \'92RandomCounts\'92:\
+142 nobs_synth = nobs\
+143 bin_count_random = random_bin_counts(nobs_synth, bin_count)\
+144 ikey = 0\
+145\
+146 data_synth = []\
+147 bin_counter = 0\
+148\
+149 for skey in bin_count:\
+150\
+151 if mode == \'92FixedCounts\'92:\
+152 count = bin_count[skey]\
+153 elif mode == \'92RandomCounts\'92:\
+154 count = bin_count_random[ikey]\
+155 ikey += 1\
+156 key = string_to_numbers(skey)\
+157 L_bounds = []\
+158 U_bounds = []\
+159 bin_counter += 1\
+160\
+161 for k in range(n_features):\
+\
+\
+\
+96 for obs in npdata:\
+97 key = []\
+98 for k in range(n_features):\
+99 idx = 0\
+100 arr = pc_table2[k] # percentiles for feature k\
+101 while obs[k] >= arr[idx] and idx < bins_per_feature[k]:\
+102 idx = idx + 1\
+103 idx = idx - 1 # lower bound for feature k in bin[key] attached to obs\
+104 key.append(idx)\
+105 skey = str(key)\
+106 if skey in bin_count:\
+107 bin_count[skey] += 1\
+108 bin_obs[skey] += "\'98" + str(obs)\
+109 else:\
+110 bin_count[skey] = 1\
+111 bin_obs[skey] = str(obs)\
+112\
+113 #- [2.3] generate nobs_synth observations (if mode = FixedCounts, nobs_synth = nobs)\
+114\
+115 def random_bin_counts(n, bin_count):\
+116 # generate multinomial bin counts with same expectation as real counts\
+117 pvals = []\
+118 for skey in bin_count:\
+119 pvals.append(bin_count[skey]/nobs)\
+120 return(np.random.multinomial(n, pvals))\
+121\
+122 def get_obs_in_bin(bin_obs, skey):\
+123 # get list of observations (real data) in bin skey, also return median\
+124 arr_obs = []\
+125 arr_obs_aux = (bin_obs[skey]).split(\'92\'98\'92)\
+126 for obs in arr_obs_aux:\
+127 obs = \'92 \'92.join(obs.split())\
+128 obs = obs.replace("[ "\
+,\
+129 obs = obs.replace("["\
+,\
+130 obs = obs.replace(" ]"\
+,\
+131 obs = obs.replace("]"\
+,\
+"")\
+"")\
+"")\
+"")\
+132 obs = obs.split(\'92 \'92)\
+133 obs = (np.array(obs)).astype(float)\
+134 arr_obs.append(obs)\
+135 arr_obs = np.array(arr_obs)\
+136 median = np.median(arr_obs, axis = 0)\
+137 return(arr_obs, median)\
+138\
+139\
+140 mode = \'92RandomCounts\'92 # (options: \'92FixedCounts\'92 or \'92RandomCounts\'92)\
+141 if mode == \'92RandomCounts\'92:\
+142 nobs_synth = nobs\
+143 bin_count_random = random_bin_counts(nobs_synth, bin_count)\
+144 ikey = 0\
+145\
+146 data_synth = []\
+147 bin_counter = 0\
+148\
+149 for skey in bin_count:\
+150\
+151 if mode == \'92FixedCounts\'92:\
+152 count = bin_count[skey]\
+153 elif mode == \'92RandomCounts\'92:\
+154 count = bin_count_random[ikey]\
+155 ikey += 1\
+156 key = string_to_numbers(skey)\
+157 L_bounds = []\
+158 U_bounds = []\
+159 bin_counter += 1\
+160\
+161 for k in range(n_features):\
+\
+162 arr = pc_table2[k]\
+163 L_bounds.append(arr[key[k]])\
+164 U_bounds.append(arr[1 + key[k]])\
+165\
+166 # sample new synth obs (new_obs) in rectangular bin skey, uniformily\
+167 # try other distrib, like multivariate Gaussian around bin median\
+168 # the list of real observations in bin[skey] is stored in obs_list (numpy array)\
+169 # median is the vector of medians for all obs in bin skey\
+170\
+171 obs_list, median = get_obs_in_bin(bin_obs, skey) # not used in this version\
+172\
+173 for i in range(count):\
+174 new_obs = np.empty(n_features) # synthesized obs\
+175 for k in range(n_features):\
+176 new_obs[k] = np.random.uniform(L_bounds[k],U_bounds[k])\
+177 data_synth.append(new_obs)\
+178\
+179 str_median = str(["%8.2f" % number for number in median])\
+180 str_median = str_median.replace("\'92"\
+,\
+"")\
+181 print("bin ID = %5d | count = %5d | median = %s | bin key = %s"\
+182 %(bin_counter, bin_count[skey], str_median, skey))\
+183\
+184 data_synth = pd.DataFrame(data_synth, columns = features)\
+185\
+186 # apply floor function (not round) to categorical/ordinal features\
+187 data_synth[\'92Churn\'92] = data_synth[\'92Churn\'92].astype(\'92int\'92)\
+188 data_synth[\'92tenure\'92] = data_synth[\'92tenure\'92].astype(\'92int\'92)\
+189\
+190 print(data_synth)\
+191 data_synth.to_csv(\'92telecom_synth_vg2.csv\'92)\
+192\
+193\
+194 #--- [3] Evaluation synthetization using joint ECDF & Kolmogorov-Smirnov distance\
+195\
+196 # dataframes: df = synthetic; data = real data,\
+197 # compute multivariate ecdf on validation set, sort it by value (from 0 to 1)\
+198\
+199 #- [3.1] compute ecdf on validation set (to later compare with that on synth data)\
+200\
+201 def compute_ecdf(dataframe, n_nodes, adjusted):\
+202\
+203 # Monte-Carlo: sampling n_nodes locations (combos) for ecdf\
+204 # - adjusted correct for sparsity in high ecdf, but is sparse in low ecdf\
+205 # - non-adjusted is the other way around\
+206 # for faster computation: pre-compute percentiles for each feature\
+207 # for faster computation: optimize the computation of n_nodes SQL-like queries\
+208\
+209 ecdf = \{\}\
+210\
+211 for point in range(n_nodes):\
+212\
+213 if point % 100 == 0:\
+214 print("sampling ecdf, location = %4d (adjusted = %s):" % (point, adjusted))\
+215 combo = np.random.uniform(0, 1, n_features)\
+216 if adjusted:\
+217 combo = combo**(1/n_features)\
+218 z = [] # multivariate quantile\
+219 query_string = ""\
+220 for k in range(n_features):\
+221 label = features[k]\
+222 dr = data_validation[label]\
+223 percentile = combo[k]\
+224 z.append(eps + np.quantile(dr, percentile))\
+225 if k == 0:\
+226 query_string += "\{\} <= \{\}"\
+.format(label, z[k])\
+227 else:\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf0 228 229\
+232 query_string += " and \{\} <= \{\}"\
+.format(label, z[k])\
+230 countifs = len(data_validation.query(query_string))\
+231 if countifs > 0:\
+ecdf[str(z)] = countifs / len(data_validation)\
+233\
+234 ecdf = dict(sorted(ecdf.items(), key=lambda item: item[1]))\
+235\
+236 237 # extract table with locations (ecdf argument) and ecdf values:\
+# - cosmetic change to return output easier to handle than ecdf\
+238\
+239 idx = 0\
+240 arr_location = []\
+241 arr_value = []\
+242 for location in ecdf:\
+243 value = ecdf[location]\
+244 location = string_to_numbers(location)\
+245 arr_location.append(location)\
+246 arr_value.append(value)\
+247 idx += 1\
+248\
+249 print("\\n")\
+250 return(arr_location, arr_value)\
+251\
+252\
+253 n_nodes = 1000 # number of random locations in feature space, where ecdf is computed\
+254 reseed = False\
+255 if reseed:\
+256 seed = 555\
+257 np.random.seed(seed)\
+258 arr_location1, arr_value1 = compute_ecdf(data_validation, n_nodes, adjusted = True)\
+259 arr_location2, arr_value2 = compute_ecdf(data_validation, n_nodes, adjusted = False)\
+260\
+261 #- [3.2] comparison: synthetic (based on training set) vs real (validation set)\
+262\
+263 def ks_delta(SyntheticData, locations, ecdf_ValidationSet):\
+264\
+265 266 267 268 269 # SyntheticData is a dataframe\
+# locations are the points in the feature space where ecdf is computed\
+# for the validation set, ecdf values are stored in ecdf_ValidationSet\
+# here we compute ecdf for the synthetic data, at the specified locations\
+# output ks_max in [0, 1] with 0 = best, 1 = worst\
+270\
+271 ks_max = 0\
+272 ecdf_real = []\
+273 ecdf_synth = []\
+274 for idx in range(len(locations)):\
+275 location = locations[idx]\
+276 value = ecdf_ValidationSet[idx]\
+277 query_string = ""\
+278 for k in range(n_features):\
+279 label = features[k]\
+280 if k == 0:\
+281 query_string += "\{\} <= \{\}"\
+.format(label, location[k])\
+282 else:\
+283 query_string += " and \{\} <= \{\}"\
+.format(label, location[k])\
+284 countifs = len(SyntheticData.query(query_string))\
+285 synth_value = countifs / len(SyntheticData)\
+286 ks = abs(value - synth_value)\
+287 ecdf_real.append(value)\
+288 ecdf_synth.append(synth_value)\
+289 if ks > ks_max:\
+290 ks_max = ks\
+291 # print("location ID: %6d | ecdf_real: %6.4f | ecdf_synth: %6.4f"\
+292 # %(idx, value, synth_value))\
+293 return(ks_max, ecdf_real, ecdf_synth)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardeftab720\pardirnatural\partightenfactor0
+\cf0 \
+\
+\
+294\
+295 df = pd.read_csv(\'92telecom_synth_vg2.csv\'92)\
+296 ks_max1, ecdf_real1, ecdf_synth1 = ks_delta(df, arr_location1, arr_value1)\
+297 ks_max2, ecdf_real2, ecdf_synth2 = ks_delta(df, arr_location2, arr_value2)\
+298 ks_max = max(ks_max1, ks_max2)\
+299 print("Test ECDF Kolmogorof-Smirnov dist. (synth. vs valid.): %6.4f" %(ks_max))\
+300\
+301 #- [3.3] comparison: training versus validation set\
+302\
+303 df = pd.read_csv(\'92telecom_training_vg2.csv\'92)\
+304 base_ks_max1, ecdf_real1, ecdf_synth1 = ks_delta(df, arr_location1, arr_value1)\
+305 base_ks_max2, ecdf_real2, ecdf_synth2 = ks_delta(df, arr_location2, arr_value2)\
+306 base_ks_max = max(base_ks_max1, base_ks_max2)\
+307 print("Base ECDF Kolmogorof-Smirnov dist. (train. vs valid.): %6.4f" %(base_ks_max))\
+308\
+309\
+310 #--- [4] visualizations\
+311\
+312 def vg_scatter(df, feature1, feature2, counter):\
+313\
+314 # customized plots, subplot position based on counter\
+315\
+316 label = feature1 + " vs " + feature2\
+317 x = df[feature1].to_numpy()\
+318 y = df[feature2].to_numpy()\
+319 plt.subplot(3, 2, counter)\
+320 plt.scatter(x, y, s = 0.1, c ="blue")\
+321 plt.xlabel(label, fontsize = 7)\
+322 plt.xticks([])\
+323 plt.yticks([])\
+324 #plt.ylim(0,70000)\
+325 #plt.xlim(18,64)\
+326 return()\
+327\
+328 def vg_histo(df, feature, counter):\
+329\
+330 # customized plots, subplot position based on counter\
+331\
+332 y = df[feature].to_numpy()\
+333 plt.subplot(2, 3, counter)\
+334 min = np.min(y)\
+335 max = np.max(y)\
+336 binBoundaries = np.linspace(min, max, 30)\
+337 plt.hist(y, bins=binBoundaries, color=\'92white\'92, align=\'92mid\'92,edgecolor=\'92red\'92\
+338 linewidth = 0.3)\
+339 plt.xlabel(feature, fontsize = 7)\
+340 plt.xticks([])\
+341 plt.yticks([])\
+342 return()\
+343\
+344 import matplotlib.pyplot as plt\
+345 import matplotlib as mpl\
+346 mpl.rcParams[\'92axes.linewidth\'92] = 0.3\
+347\
+348 #- [4.1] scatterplots for Churn = \'92No\'92\
+349\
+350 dfs = pd.read_csv(\'92telecom_synth_vg2.csv\'92)\
+351 dfs.drop(dfs[dfs[\'92Churn\'92] == 0].index, inplace = True)\
+352 dfv = pd.read_csv(\'92telecom_validation_vg2.csv\'92)\
+353 dfv.drop(dfv[dfv[\'92Churn\'92] == 0].index, inplace = True)\
+354\
+355 vg_scatter(dfs, \'92tenure\'92\
+,\
+356 vg_scatter(dfv, \'92tenure\'92\
+,\
+357 vg_scatter(dfs, \'92tenure\'92\
+,\
+358 vg_scatter(dfv, \'92tenure\'92\
+,\
+359 vg_scatter(dfs, \'92MonthlyCharges\'92\
+\'92MonthlyCharges\'92, 1)\
+\'92MonthlyCharges\'92, 2)\
+\'92TotalChargeResidues\'92, 3)\
+\'92TotalChargeResidues\'92, 4)\
+\'92TotalChargeResidues\'92, 5)\
+\
+\
+\
+\
+360 vg_scatter(dfv, \'92MonthlyCharges\'92\
+361 plt.show()\
+,\
+\'92TotalChargeResidues\'92, 6)\
+362\
+363 #- [4.2] scatterplots for Churn = \'92Yes\'92\
+364\
+365 dfs = pd.read_csv(\'92telecom_synth_vg2.csv\'92)\
+366 dfs.drop(dfs[dfs[\'92Churn\'92] == 1].index, inplace = True)\
+367 dfv = pd.read_csv(\'92telecom_validation_vg2.csv\'92)\
+368 dfv.drop(dfv[dfv[\'92Churn\'92] == 1].index, inplace = True)\
+369\
+370 vg_scatter(dfs, \'92tenure\'92\
+,\
+\'92MonthlyCharges\'92, 1)\
+371 vg_scatter(dfv, \'92tenure\'92\
+,\
+\'92MonthlyCharges\'92, 2)\
+372 vg_scatter(dfs, \'92tenure\'92\
+,\
+\'92TotalChargeResidues\'92, 3)\
+373 vg_scatter(dfv, \'92tenure\'92\
+,\
+\'92TotalChargeResidues\'92, 4)\
+374 vg_scatter(dfs, \'92MonthlyCharges\'92\
+,\
+\'92TotalChargeResidues\'92, 5)\
+375 vg_scatter(dfv, \'92MonthlyCharges\'92\
+,\
+\'92TotalChargeResidues\'92, 6)\
+376 plt.show()\
+377\
+378 #- [4.3] ECDF scatterplot: validation set vs. synth data\
+379\
+380 plt.xticks(fontsize=7)\
+381 plt.yticks(fontsize=7)\
+382 plt.scatter(ecdf_real1, ecdf_synth1, s = 0.1, c ="blue")\
+383 plt.scatter(ecdf_real2, ecdf_synth2, s = 0.1, c ="blue")\
+384 plt.show()\
+385\
+386 #- [4.4] histograms, Churn = \'92No\'92\
+387\
+388 dfs = pd.read_csv(\'92telecom_synth_vg2.csv\'92)\
+389 dfs.drop(dfs[dfs[\'92Churn\'92] == 0].index, inplace = True)\
+390 dfv = pd.read_csv(\'92telecom_validation_vg2.csv\'92)\
+391 dfv.drop(dfv[dfv[\'92Churn\'92] == 0].index, inplace = True)\
+392 vg_histo(dfs, \'92tenure\'92, 1)\
+393 vg_histo(dfs, \'92MonthlyCharges\'92, 2)\
+394 vg_histo(dfs, \'92TotalChargeResidues\'92, 3)\
+395 vg_histo(dfv, \'92tenure\'92, 4)\
+396 vg_histo(dfv, \'92MonthlyCharges\'92, 5)\
+397 vg_histo(dfv, \'92TotalChargeResidues\'92, 6)\
+398 plt.show()\
+399\
+400 #- [4.5] histograms, Churn = \'92Yes\'92\
+401\
+402 dfs = pd.read_csv(\'92telecom_synth_vg2.csv\'92)\
+403 dfs.drop(dfs[dfs[\'92Churn\'92] == 1].index, inplace = True)\
+404 dfv = pd.read_csv(\'92telecom_validation_vg2.csv\'92)\
+405 dfv.drop(dfv[dfv[\'92Churn\'92] == 1].index, inplace = True)\
+406 vg_histo(dfs, \'92tenure\'92, 1)\
+407 vg_histo(dfs, \'92MonthlyCharges\'92, 2)\
+408 vg_histo(dfs, \'92TotalChargeResidues\'92, 3)\
+409 vg_histo(dfv, \'92tenure\'92, 4)\
+410 vg_histo(dfv, \'92MonthlyCharges\'92, 5)\
+411 vg_histo(dfv, \'92TotalChargeResidues\'92, 6)\
+412 plt.show()\
+}
